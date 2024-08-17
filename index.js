@@ -29,8 +29,31 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
- 
+
     const productsCollection = client.db('jobDb').collection('job');
+
+    // app.get('/all-products', async (req, res) => {
+    //   const size = parseInt(req.query.size)
+    //   const page = parseInt(req.query.page) - 1
+    //   const filter = req.query.filter
+    //   const sort = req.query.sort
+    //   const search = req.query.search
+    //   console.log(size, page)
+
+    //   let query = {
+    //     productName: { $regex: search, $options: 'i' },
+    //   }
+    //   if (filter) query.category = filter
+    //   let options = {}
+    //   if (sort) options = { sort: { creationDate: sort === 'asc' ? 1 : -1 } }
+    //   const result = await productsCollection
+    //     .find(query, options)
+    //     .skip(page * size)
+    //     .limit(size)
+    //     .toArray()
+    //   res.send(result)
+    // })
+
 
     app.get('/all-products', async (req, res) => {
       const size = parseInt(req.query.size)
@@ -38,36 +61,66 @@ async function run() {
       const filter = req.query.filter
       const sort = req.query.sort
       const search = req.query.search
-      console.log(size, page)
+      const minPrice = parseInt(req.query.minPrice);
+      const maxPrice = parseInt(req.query.maxPrice);
 
       let query = {
         productName: { $regex: search, $options: 'i' },
       }
       if (filter) query.category = filter
+      
+      if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+        query.price = { $gte: minPrice, $lte: maxPrice };
+    } else if (!isNaN(minPrice)) {
+        query.price = { $gte: minPrice };
+    } else if (!isNaN(maxPrice)) {
+        query.price = { $lte: maxPrice };
+    }
+
       let options = {}
-      if (sort) options = { sort: { deadline: sort === 'asc' ? 1 : -1 } }
+      if (sort === 'asc' || sort === 'dsc') {
+        options = { sort: { price: sort === 'asc' ? 1 : -1 } }
+      } else if (sort === 'newest') {
+        options = { sort: { creationDate: -1 } }
+      }
       const result = await productsCollection
         .find(query, options)
         .skip(page * size)
         .limit(size)
         .toArray()
       res.send(result)
+
+
+
+      // const result = await productsCollection.find().toArray();
+      // res.send(result);
     })
+
 
 
 
     app.get('/products-count', async (req, res) => {
-    const filter = req.query.filter
-    const search = req.query.search
-    let query = {
-      productName: { $regex: search, $options: 'i' },
-    }
-    if (filter) query.category = filter
-    const count = await productsCollection.countDocuments(query)
+      const filter = req.query.filter
+      const search = req.query.search
+      const minPrice = parseInt(req.query.minPrice);
+      const maxPrice = parseInt(req.query.maxPrice);
 
-    res.send({ count })
+      let query = {
+        productName: { $regex: search, $options: 'i' },
+      }
+      if (filter) query.category = filter
+      if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+        query.price = { $gte: minPrice, $lte: maxPrice };
+    } else if (!isNaN(minPrice)) {
+        query.price = { $gte: minPrice };
+    } else if (!isNaN(maxPrice)) {
+        query.price = { $lte: maxPrice };
+    }
+      const count = await productsCollection.countDocuments(query)
+
+      res.send({ count })
     })
-    
+
 
 
 
@@ -82,10 +135,10 @@ run().catch(console.dir);
 
 
 
-app.get('/',(req,res)=>{
+app.get('/', (req, res) => {
   res.send('job task is working');
 })
 
-app.listen(port, ()=>{
+app.listen(port, () => {
   console.log(`job task is working on ${port}`);
 })
