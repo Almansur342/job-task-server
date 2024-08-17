@@ -21,7 +21,17 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-  
+    app.get('/products-count', async (req, res) => {
+    const filter = req.query.filter
+    const search = req.query.search
+    let query = {
+      productName: { $regex: search, $options: 'i' },
+    }
+    if (filter) query.category = filter
+    const count = await jobsCollection.countDocuments(query)
+
+    res.send({ count })
+    })
     
 
 
