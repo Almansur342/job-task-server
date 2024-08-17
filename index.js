@@ -4,7 +4,15 @@ const cors = require('cors');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 
-app.use(cors());
+const corsOptions = {
+  origin: [
+    'http://localhost:5173',
+  ],
+  credentials: true,
+  optionSuccessStatus: 200,
+}
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 
@@ -21,6 +29,33 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+ 
+    const productsCollection = client.db('jobDb').collection('job');
+
+    app.get('/all-products', async (req, res) => {
+      const size = parseInt(req.query.size)
+      const page = parseInt(req.query.page) - 1
+      const filter = req.query.filter
+      const sort = req.query.sort
+      const search = req.query.search
+      console.log(size, page)
+
+      let query = {
+        productName: { $regex: search, $options: 'i' },
+      }
+      if (filter) query.category = filter
+      let options = {}
+      if (sort) options = { sort: { deadline: sort === 'asc' ? 1 : -1 } }
+      const result = await productsCollection
+        .find(query, options)
+        .skip(page * size)
+        .limit(size)
+        .toArray()
+      res.send(result)
+    })
+
+
+
     app.get('/products-count', async (req, res) => {
     const filter = req.query.filter
     const search = req.query.search
@@ -28,11 +63,13 @@ async function run() {
       productName: { $regex: search, $options: 'i' },
     }
     if (filter) query.category = filter
-    const count = await jobsCollection.countDocuments(query)
+    const count = await productsCollection.countDocuments(query)
 
     res.send({ count })
     })
     
+
+
 
 
     await client.db("admin").command({ ping: 1 });
