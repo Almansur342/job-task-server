@@ -30,7 +30,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
 
-    const productsCollection = client.db('jobDb').collection('job');
+    // const productsCollection = client.db('jobDb').collection('job');
+    const productsCollection = client.db('jobDb').collection('jobPro');
 
     // app.get('/all-products', async (req, res) => {
     //   const size = parseInt(req.query.size)
@@ -59,6 +60,8 @@ async function run() {
       const size = parseInt(req.query.size)
       const page = parseInt(req.query.page) - 1
       const filter = req.query.filter
+      const brand = req.query.brand
+
       const sort = req.query.sort
       const search = req.query.search
       const minPrice = parseInt(req.query.minPrice);
@@ -67,7 +70,8 @@ async function run() {
       let query = {
         productName: { $regex: search, $options: 'i' },
       }
-      if (filter) query.category = filter
+      if (filter) query.category = filter;
+      if (brand) query.brand = brand;
       
       if (!isNaN(minPrice) && !isNaN(maxPrice)) {
         query.price = { $gte: minPrice, $lte: maxPrice };
@@ -104,11 +108,14 @@ async function run() {
       const search = req.query.search
       const minPrice = parseInt(req.query.minPrice);
       const maxPrice = parseInt(req.query.maxPrice);
+      const brand = req.query.brand
 
       let query = {
         productName: { $regex: search, $options: 'i' },
       }
-      if (filter) query.category = filter
+      if (filter) query.category = filter;
+      if (brand) query.brand = brand;
+      
       if (!isNaN(minPrice) && !isNaN(maxPrice)) {
         query.price = { $gte: minPrice, $lte: maxPrice };
     } else if (!isNaN(minPrice)) {
@@ -120,6 +127,12 @@ async function run() {
 
       res.send({ count })
     })
+
+
+    // app.get('/all', async(req,res)=>{
+    //   const result = await productsCollection.find().toArray()
+    //   res.send(result);
+    // })
 
 
 
